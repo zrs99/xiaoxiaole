@@ -65,11 +65,12 @@ if __name__ == "__main__":
     mixer = pygame.mixer
     mixer.init()
     music = mixer.music
-    music.load(r"C:\Users\钟日深\Music\Yanwei Yang - Pisces (Inst_).flac")
+    music.load(r"./sound/WorldSceneBGM.ogg")
     # music.set_volume()
     music.play()
 
     font = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 40)
+    process_font = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 20)
 
     # 开始界面
     step = 0
@@ -96,23 +97,30 @@ if __name__ == "__main__":
             screen.blit(background, (0, 0, 768, 768))
             pygame.draw.rect(screen, (255, 255, 255), (200, 540, 445, 16))
             pygame.draw.rect(screen, (174, 213, 76), (200, 540, step % 448, 16))
-            process_text = font.render('%s %%' % str(int((step % 445) / 445 * 100)), True, (0, 0, 0))
-            screen.blit(process_text, (200 + step, 540))
+            process_text = process_font.render('%s %%' % str(int((step % 445) / 445 * 100)), True, (0, 0, 0))
+            screen.blit(process_text, (200 + step, 538))
             step += 3
 
             if step > 445:
                 break
 
-    step = 0
+    step = 448
     question = 1
     score = 0
     gameTool = Tool('./maps/1')
+    music.stop()
 
-   # 游戏界面
+
+
+    game_music = mixer.music
+    game_music.load(r"./sound/GameSceneBGM.ogg")
+    # music.set_volume()
+    music.play()
+    #-------------------------------------------------------
+    # 游戏界面
     while True:
         # time.sleep(0.01)
         pygame.display.update()
-
         #关卡地图刷新
         if step % 448 == 0:
 
@@ -122,7 +130,7 @@ if __name__ == "__main__":
             # magicBlock.row, magicBlock.col = gameTool.getRowCol()
             gameRow, gameCol = gameTool.getRowCol()
             magicBlock = MagicBlock(64, 64, gameRow, gameCol, 47, 47, DRAW_TYPE_IMAGE, screen)
-            print(magicBlock.row, magicBlock.col)
+            # print(magicBlock.row, magicBlock.col)
             question += 1
             magicBlock.readMap(mapPath)
             magicBlock.initMagicBlock()
@@ -135,6 +143,7 @@ if __name__ == "__main__":
             #text 第几关
             question_font = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 16)
             question_text = question_font.render('第%s关' % question, True, (174, 213, 76))
+            magicBlock.drawMagicSquare()
             magicBlock.drawMagicBlock()
 
             if question == 4:
@@ -152,14 +161,14 @@ if __name__ == "__main__":
 
         # 进度条
         img = pygame.image.load(('./images/process3.png')).convert_alpha()
-        screen.blit(question_text, (10, 10))
+        # screen.blit(question_text, (10, 10))
         screen.blit(img,(75,17,500,10))
         pygame.draw.rect(screen, (255, 255, 255), (103, 25, 445, 16))
         pygame.draw.rect(screen, (174,213,76), (103, 25, step % 448, 16))
         font1 = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 16)
-        text1 = font1.render('%s %%' % str(int((step % 448) / 448 * 100)), True, (174, 213, 76))
-        screen.blit(text1, (103+step % 448, 25))
-        step += 1
+        # text1 = font1.render('%s %%' % str(int((step % 448) / 448 * 100)), True, (174, 213, 76))
+        # screen.blit(text1, (103+step % 448, 25))
+        step -= 0.25
 
         # 得分
         screen.blit(pygame.image.load('./pic2/task.png').convert_alpha(), (600, 0))
@@ -178,7 +187,7 @@ if __name__ == "__main__":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 score += 10
-                print(x, y)
+                # print(x, y)
                 magicBlock.mouseClicked(x, y)
 
 

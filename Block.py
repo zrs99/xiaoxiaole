@@ -8,6 +8,7 @@ DRAW_TYPE_CIRCLE = 1
 DRAW_TYPE_RECT = 2
 DRAW_TYPE_RANDOM = 3
 DRAW_TYPE_IMAGE = 4
+DRAW_TYPE_ICE = 5
 
 BLOCK_NO_USE = 0
 BLOCK_IS_USE = 1
@@ -55,8 +56,14 @@ class ImageShape(Shape):
             # num = random.randint(1, 11)
             self.score = self.imageNum
             img = pygame.image.load('./pic2/'+list_animal[self.imageNum])
+            # img = pygame.image.load('./images/%s.png'%random.randint(1, 12))
             self.imageNum = self.imageNum
             self.screen.blit(img, (self.leftX, self.topY))
+        elif self.isUse == BLOCK_NO_USE:
+            self.screen.blit(pygame.image.load('./pic2/fruit.png'), (self.leftX, self.topY))
+
+    def drawSquare(self):
+         self.screen.blit(pygame.image.load('./pic2/brick.png'), (self.leftX, self.topY))
 
     def mouseClicked(self, x, y):
         if x > self.leftX and x < self.leftX+self.width and y > self.topY and y < self.topY+self.height and self.isUse == BLOCK_IS_USE:
@@ -65,7 +72,14 @@ class ImageShape(Shape):
             # print(self.imageNum)
 
 class ImageIceShape(ImageShape):
-    pass
+    def __init__(self, screen):
+        super().__init__(screen)
+        self.freezeLevel = -1
+
+    def drawShape(self):
+        iceImg = pygame.image.load('./pic2/ice%s.png'%self.freezeLevel)
+        self.screen.blit(iceImg, (self.leftX, self.topY))
+
 
 class RectShape(Shape):
     def __init__(self, screen):
@@ -112,7 +126,15 @@ class Factory:
             circleShape.topY = top
             circleShape.radius = width / 2
             return circleShape
-
+        elif type == DRAW_TYPE_ICE:
+            iceImageShape = ImageIceShape(screen)
+            iceImageShape.leftX = left
+            iceImageShape.topY = top
+            iceImageShape.width = width
+            iceImageShape.height = height
+            iceImageShape.freezeLevel = random.randint(0, 8)
+            iceImageShape.imageNum = random.randint(0, 8)
+            return iceImageShape
 
 class Block:
     def __init__(self, leftX, topY, width, height, type, screen):
@@ -162,6 +184,7 @@ class MagicBlock:
         self.col = col
         self.blocks = [[0]*self.col for i in range(self.row)]
         self.map = [[0]*self.col for i in range(self.row)]
+        self.iceBlocks = [[0]*self.col for i in range(self.row)]
         self.screen = screen
         self.factory = Factory()
         self.tool = Tool('./maps/1')
@@ -171,13 +194,19 @@ class MagicBlock:
             for j in range(0, self.col):
                 self.blocks[i][j] = self.factory.create(self.type, self.screen, self.screen_x+i*self.width, self.screen_y+j*self.height, self.width, self.height)
                 self.blocks[i][j].isUse = self.map[i][j]
+                self.iceBlocks[i][j] = self.factory.create(DRAW_TYPE_ICE, self.screen, self.screen_x+i*self.width, self.screen_y+j*self.height, self.width, self.height)
                 # self.blocks[i][j].drawShape()
 
     def drawMagicBlock(self):
-        print(self.row, self.col)
         for i in range(0, self.row):
             for j in range(0, self.col):
+                self.iceBlocks[i][j].drawShape()
                 self.blocks[i][j].drawShape()
+
+    def drawMagicSquare(self):
+        for i in range(0, self.row):
+            for j in range(0, self.col):
+                self.blocks[i][j].drawSquare()
                 # if self.type == DRAW_TYPE_IMAGE:
                 #     self.blocks[i][j] = Block(self.screen_x+i*self.width, self.screen_y+j*self.height, self.width,
                 #                               self.height, DRAW_TYPE_IMAGE, self.screen)

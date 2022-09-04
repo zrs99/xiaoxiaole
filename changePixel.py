@@ -8,9 +8,9 @@ def produceImage(file_in, width, height, file_out):
 
 
 if __name__ == '__main__':
-    width = 900
-    height = 670
+    width = 47
+    height = 47
     for i in range(1, 13):
-        file_in = './images/背景1.jpg'
-        file_out = './images/背景1.png'
+        file_in = 'D:\Programs\images\image3\%s.png'%i
+        file_out = './images/%s.png'%i
         produceImage(file_in, width, height, file_out)
