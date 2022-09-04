@@ -12,8 +12,10 @@ DRAW_TYPE_IMAGE = 4
 BLOCK_NO_USE = 0
 BLOCK_IS_USE = 1
 
-SCREEN_X = 0
-SCREEN_Y = 0
+WIDTH = 47
+HEIGHT = 47
+SCREEN_X = 64
+SCREEN_Y = 64
 
 
 def ChangeColor():
@@ -75,6 +77,7 @@ if __name__ == "__main__":
     # 开始界面
     step = 0
     begin_flag = False
+    last_x = last_y = -1
     while True:
         pygame.display.update()
 
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     step = 448
     question = 1
     score = 0
-    gameTool = Tool('./maps/1')
+    gameTool = Tool('./maps/1', SCREEN_X, SCREEN_Y, WIDTH, HEIGHT)
     music.stop()
 
 
@@ -129,7 +132,7 @@ if __name__ == "__main__":
             gameTool.filePath = mapPath
             # magicBlock.row, magicBlock.col = gameTool.getRowCol()
             gameRow, gameCol = gameTool.getRowCol()
-            magicBlock = MagicBlock(64, 64, gameRow, gameCol, 47, 47, DRAW_TYPE_IMAGE, screen)
+            magicBlock = MagicBlock(SCREEN_X, SCREEN_Y, gameRow, gameCol, WIDTH, HEIGHT, DRAW_TYPE_IMAGE, screen)
             # print(magicBlock.row, magicBlock.col)
             question += 1
             magicBlock.readMap(mapPath)
@@ -153,12 +156,6 @@ if __name__ == "__main__":
         # magicBlock.drawGrids()
         clock = pygame.time.Clock()
 
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT or event.type == pygame.K_F1:
-                pygame.quit()
-                sys.exit()
-
         # 进度条
         img = pygame.image.load(('./images/process3.png')).convert_alpha()
         # screen.blit(question_text, (10, 10))
@@ -168,7 +165,7 @@ if __name__ == "__main__":
         font1 = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 16)
         # text1 = font1.render('%s %%' % str(int((step % 448) / 448 * 100)), True, (174, 213, 76))
         # screen.blit(text1, (103+step % 448, 25))
-        step -= 0.25
+        step -= 0.01
 
         # 得分
         screen.blit(pygame.image.load('./pic2/task.png').convert_alpha(), (600, 0))
@@ -181,13 +178,31 @@ if __name__ == "__main__":
 
 
         #鼠标点击事件
+        flag_tow = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                score += 10
-                # print(x, y)
-                magicBlock.mouseClicked(x, y)
 
+                if (last_x != -1 or last_y != -1):
+                    print(last_x, last_y, x, y)
+                    magicBlock.mouseClicked(last_x, last_y, x, y)
+                    flag_tow = True
 
+                last_x = x
+                last_y = y
+
+            if flag_tow:
+                last_x = -1
+                last_y = -1
+                # while True:
+                #     for next_event in pygame.event.get():
+                #         if event.type == pygame.QUIT:
+                #             sys.exit()
+                #         if event.type == pygame.MOUSEBUTTONDOWN:
+                #             x_next, y_nent = event.pos
+                #             score += 10
+                #             print(x, y, x_next, y_nent)
+                #             magicBlock.mouseClicked(x, y)
+                #             break
