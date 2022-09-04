@@ -61,12 +61,8 @@ class Shape:
         self.screen = screen
         self.isUse = BLOCK_IS_USE
 
-
     @abstractmethod
     def mouseClicked(self, x, y):
-        # if x > self.leftX and x < self.leftX+55 and y > self.topY and y < self.topY+55 and self.isUse == BLOCK_IS_USE:
-        #     pygame.draw.rect(self.screen, self.changeColor(), (self.leftX, self.topY, self.width, self.height))
-            # print(self.imageNum)
         pass
 
     def changeColor(self):
@@ -79,14 +75,24 @@ class Shape:
     def drawShape(self):
         pass
 
+class ImageLevelShape(Shape):
+    def __init__(self, screen, left, top):
+        super().__init__(screen)
+        self.leftX = left
+        self.topY = top
+
+    def drawShape(self, level):
+        levelImg = pygame.image.load('./pic2/level%s.png'%level)
+        self.screen.blit(levelImg, (self.leftX, self.topY))
+
 class ImageShape(Shape):
     def __init__(self, screen):
         super().__init__(screen)
         self.width = 0
         self.height = 0
         self.score = 0
-        self.pos_i = 0
-        self.pos_j = 0
+        self.pos_x = 0
+        self.pos_y = 0
         self.animalNum = BLOCK_NO_IMAGE
         self.imageType = -1
 
@@ -221,19 +227,16 @@ class MagicBlock:
 
 
     def mouseClicked(self, lastMouseX, lastMouseY, nextMouseX, nextMouseY):
-        # print(self.row, self.col)
-        # for i in range(0, self.row):
-        #     for j in range(0, self.col):
-                # print(i, j)
-                # self.blocks[i][j].mouseClicked(mouseX, mouseY)
+        score = 0
         lastMouseX, lastMouseY = self.tool.get_IJ(lastMouseX, lastMouseY)
         nextMouseX, nextMouseY = self.tool.get_IJ(nextMouseX, nextMouseY)
         temp = self.blocks[lastMouseX][lastMouseY].animalNum
         self.blocks[lastMouseX][lastMouseY].animalNum = self.blocks[nextMouseX][nextMouseY].animalNum
         self.blocks[nextMouseX][nextMouseY].animalNum = temp
 
-        self.eliminateAnimal(lastMouseX, lastMouseY)
-        self.eliminateAnimal(nextMouseX, nextMouseY)
+        score += self.eliminateAnimal(lastMouseX, lastMouseY)
+        score += self.eliminateAnimal(nextMouseX, nextMouseY)
+        return score
 
     def readMap(self, path):
         with open(path, 'r') as file:
@@ -248,36 +251,48 @@ class MagicBlock:
                 rect = pygame.Rect((self.screen_x+x*self.width, self.screen_y+y*self.height, self.width, self.height))
                 pygame.draw.rect(self.screen, (255, 165, 0), rect, 1)
 
-    def eliminateAnimal(self, pos_i, pos_j):
+    def eliminateAnimal(self, pos_x, pos_y):
         up = 0
         down = 0
         left = 0
         right = 0
-        score = -10
-        print(pos_i, pos_j)
-        i = self.blocks[pos_i][pos_j].pos_i
-        j = self.blocks[pos_i][pos_j].pos_j
-        while pos_j+up-1 >= 0 and self.blocks[pos_i][pos_j+up-1].animalNum == self.blocks[pos_i][pos_j].animalNum : up-=1
-        while pos_j+j+down+1 < self.col and self.blocks[pos_i][pos_j+down+1].animalNum == self.blocks[pos_i][pos_j].animalNum : down+=1
-        while pos_i+left-1 >= 0 and self.blocks[pos_i+left-1][pos_j].animalNum == self.blocks[pos_i][pos_j].animalNum : left-=1
-        while pos_i+i+right+1 < self.row and self.blocks[pos_i+right+1][pos_j].animalNum == self.blocks[pos_i][pos_j].animalNum : right+=1
+        score = 0
+        # print(pos_x, pos_y)
+        while pos_y+up-1 >= 0 and self.blocks[pos_x][pos_y+up-1].animalNum == self.blocks[pos_x][pos_y].animalNum : up-=1
+        while pos_y+down+1 < self.row and self.blocks[pos_x][pos_y+down+1].animalNum == self.blocks[pos_x][pos_y].animalNum : down+=1
+        while pos_x+left-1 >= 0 and self.blocks[pos_x+left-1][pos_y].animalNum == self.blocks[pos_x][pos_y].animalNum : left-=1
+        while pos_x+right+1 < self.col and self.blocks[pos_x+right+1][pos_y].animalNum == self.blocks[pos_x][pos_y].animalNum : right+=1
 
         if down-up >= 2:
-            for j in range(pos_j+up, pos_j+down+1):
-                print(pos_i, j)
-                score += 10
-                self.blocks[pos_i][j] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
-                                                            self.width, self.height, pos_i, j, self.map)
+            for y in range(pos_y+up, pos_y+down+1):
+                print(pos_x, y)
+                score += 1
+                self.blocks[pos_x][y] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
+                                                            self.width, self.height, pos_x, y, self.map)
         if right-left >= 2:
-            for i in range(pos_i+left, pos_i+right+1):
-                print(i, pos_j)
-                score += 10
-                self.blocks[i][pos_j] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
-                                                            self.width, self.height, i, pos_j, self.map)
-
+            for x in range(pos_x+left, pos_x+right+1):
+                print((x, pos_y))
+                score += 1
+                self.blocks[x][pos_y] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
+                                                            self.width, self.height, x, pos_y, self.map)
+        if down-up >= 2 and right-left >= 2:
+            score -= 1
         # time.sleep(1)
         self.drawMagicSquare()
         self.drawMagicBlock()
+        return score
+
+    def drawProcess(self, step):
+        img = pygame.image.load(('./images/process3.png')).convert_alpha()
+        self.screen.blit(img,(52,17,500,10))
+        pygame.draw.rect(self.screen, (255, 255, 255), (80, 25, 445, 16))
+        pygame.draw.rect(self.screen, (174,213,76), (80, 25, step % 448, 16))
+
+    def refreshScore(self):
+        score = 0
+        for i in range(self.row):
+            for j in range(self.col):
+                score += self.eliminateAnimal(i, j)
         return score
 
 class Tool:
