@@ -3,6 +3,7 @@ import time
 import sys
 import random
 from Block import *
+import queue
 
 DRAW_TYPE_CIRCLE = 1
 DRAW_TYPE_RECT = 2
@@ -78,12 +79,23 @@ if __name__ == "__main__":
     step = 0
     begin_flag = False
     last_x = last_y = -1
+    blingNum = 0
+
     while True:
         pygame.display.update()
+        # time.sleep(0.05)
 
-        background = pygame.image.load('pic2/开始界面.jpeg')
-        background = pygame.transform.scale(background, (900, 670))
-        screen.blit(background, (0, 0, 768, 768))
+        if blingNum == 0:
+            background = pygame.image.load('pic2/开始界面.jpeg')
+            background = pygame.transform.scale(background, (900, 670))
+            screen.blit(background, (0, 0, 768, 768))
+
+        # print(blingNum)
+        imgBling = pygame.image.load('./pic2/bling%s.png'%(blingNum+1))
+        screen.blit(imgBling, (100, 100))
+        blingNum = (blingNum+1)%9
+
+
 
         # screen.blit(pygame.image.load('./pic2/task.png').convert_alpha(), (600, 0))
         beginBotton = font.render('开始游戏', True, (0, 0, 0))
@@ -107,25 +119,24 @@ if __name__ == "__main__":
             if step > 445:
                 break
 
+    # -------------------------------------------------------
+    # 游戏界面
     step = 448
     level = 1
     score = 0
+
+    # 背景音乐
     gameTool = Tool('./maps/1', SCREEN_X, SCREEN_Y, WIDTH, HEIGHT)
     music.stop()
-
-
 
     game_music = mixer.music
     game_music.load(r"./sound/GameSceneBGM.ogg")
     # music.set_volume()
     music.play()
     levelCtrl = ImageLevelShape(screen, 750, 0)
-
-    #-------------------------------------------------------
-    # 游戏界面
     while True:
         # time.sleep(0.01)
-
+        pygame.display.update()
         #关卡地图刷新
         if step % 448 == 0:
 
@@ -145,11 +156,14 @@ if __name__ == "__main__":
 
             #text 第几关
             # question_font = pygame.font.Font(r'C:\Windows\Fonts\simsun.ttc', 16)
-            # question_text = question_font.render('第%s关' % question, True, (174, 213, 76))
+            #    question_text = question_font.render('第%s关' % question, True, (174, 213, 76))
             levelCtrl.drawShape(level)
             magicBlock.drawMagicSquare()
             magicBlock.drawMagicBlock()
 
+            #刷新得分
+            # pygame.display.update()
+            # score += magicBlock.refreshScore()
             # stepImg = pygame.image.load('./pic2/step.png')
             # screen.blit(stepImg, (0, 0))
 
@@ -163,15 +177,17 @@ if __name__ == "__main__":
         textScore = score_font.render('%s分' % score, True, (0, 0, 0))
         screen.blit(textScore, (20, 40))
 
-        pygame.display.update()
+        # pygame.display.update()
         #网格绘制
         # magicBlock.drawGrids()
 
-        #刷新得分
-        score += magicBlock.refreshScore()
-
         # 进度条
-        magicBlock.drawProcess(step)
+        # magicBlock.drawProcess(step)
+        img = pygame.image.load(('./images/process3.png')).convert_alpha()
+        screen.blit(img,(52,17,500,10))
+        pygame.draw.rect(screen, (255, 255, 255), (80, 25, 445, 16))
+        pygame.draw.rect(screen, (174,213,76), (80, 25, step % 448, 16))
+
         step -= 0.01
 
         #刷新
@@ -186,15 +202,8 @@ if __name__ == "__main__":
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-
-                if (last_x != -1 or last_y != -1):
-                    # print(last_x, last_y, x, y)
-                    score += magicBlock.mouseClicked(last_x, last_y, x, y)
-                    flag_tow = True
-
-                last_x = x
-                last_y = y
-
-            if flag_tow:
-                last_x = -1
-                last_y = -1
+                Tool.gameQueue.put((x, y))
+                x, y = gameTool.get_IJ(x, y)
+                imgFrame = pygame.image.load('./pic2/frame.png')
+                screen.blit(imgFrame, (magicBlock.blocks[x][y].leftX,magicBlock.blocks[x][y].topY))
+                score += magicBlock.mouseClicked()

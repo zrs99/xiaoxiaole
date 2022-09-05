@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 
 import time
 
+import queue
+
 DRAW_TYPE_CIRCLE = 1
 DRAW_TYPE_RECT = 2
 DRAW_TYPE_RANDOM = 3
@@ -218,24 +220,41 @@ class MagicBlock:
         for i in range(0, self.row):
             for j in range(0, self.col):
                 # self.iceBlocks[i][j].drawShape()
+                # if self.blocks[i][j].isUse == BLOCK_IS_USE:
                 self.blocks[i][j].drawShape()
 
     def drawMagicSquare(self):
         for i in range(0, self.row):
             for j in range(0, self.col):
-                self.blocks[i][j].drawSquare()
+                if self.blocks[i][j].isUse == BLOCK_IS_USE:
+                    self.blocks[i][j].drawSquare()
 
 
-    def mouseClicked(self, lastMouseX, lastMouseY, nextMouseX, nextMouseY):
+    def mouseClicked(self):
         score = 0
-        lastMouseX, lastMouseY = self.tool.get_IJ(lastMouseX, lastMouseY)
-        nextMouseX, nextMouseY = self.tool.get_IJ(nextMouseX, nextMouseY)
-        temp = self.blocks[lastMouseX][lastMouseY].animalNum
-        self.blocks[lastMouseX][lastMouseY].animalNum = self.blocks[nextMouseX][nextMouseY].animalNum
-        self.blocks[nextMouseX][nextMouseY].animalNum = temp
+        if Tool.gameQueue.qsize() == 0 or Tool.gameQueue.qsize() == 1:
+            return score
 
-        score += self.eliminateAnimal(lastMouseX, lastMouseY)
-        score += self.eliminateAnimal(nextMouseX, nextMouseY)
+        last = Tool.gameQueue.get()
+        next = Tool.gameQueue.get()
+        lastMouseX, lastMouseY = self.tool.get_IJ(last[0], last[1])
+        nextMouseX, nextMouseY = self.tool.get_IJ(next[0], next[1])
+
+        # print(self.blocks[lastMouseX][lastMouseY], self.blocks[nextMouseX][nextMouseY])
+        if lastMouseX < 0 or nextMouseX < 0 or lastMouseY < 0 or nextMouseY < 0 \
+                or lastMouseX >= self.col or lastMouseY >= self.row or nextMouseX >= self.col or nextMouseY >= self.row:
+            return score
+
+        if self.blocks[lastMouseX][lastMouseY].isUse == BLOCK_IS_USE and self.blocks[nextMouseX][nextMouseY].isUse == BLOCK_IS_USE:
+            print("------------")
+
+            temp = self.blocks[lastMouseX][lastMouseY].animalNum
+            self.blocks[lastMouseX][lastMouseY].animalNum = self.blocks[nextMouseX][nextMouseY].animalNum
+            self.blocks[nextMouseX][nextMouseY].animalNum = temp
+            score += self.eliminateAnimal(lastMouseX, lastMouseY)
+            score += self.eliminateAnimal(nextMouseX, nextMouseY)
+
+
         return score
 
     def readMap(self, path):
@@ -264,17 +283,42 @@ class MagicBlock:
         while pos_x+right+1 < self.col and self.blocks[pos_x+right+1][pos_y].animalNum == self.blocks[pos_x][pos_y].animalNum : right+=1
 
         if down-up >= 2:
+            time.sleep(0.2)
             for y in range(pos_y+up, pos_y+down+1):
-                print(pos_x, y)
+                # print(pos_x, y)
                 score += 1
                 self.blocks[pos_x][y] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
                                                             self.width, self.height, pos_x, y, self.map)
+                blingNum = 0
+                while True:
+                    pygame.display.update()
+                    time.sleep(0.0002)
+                    imgBling = pygame.image.load('./pic2/bling%s.png' % (blingNum + 1))
+                    self.screen.blit(imgBling, (self.blocks[pos_x][y].leftX, self.blocks[pos_x][y].topY))
+                    blingNum = (blingNum + 1) % 9
+                    blingNum += 1
+                    if blingNum == 9:
+                        break
+
         if right-left >= 2:
+            time.sleep(0.2)
             for x in range(pos_x+left, pos_x+right+1):
-                print((x, pos_y))
+                # print((x, pos_y))
                 score += 1
                 self.blocks[x][pos_y] = self.factory.create(self.type, self.screen, self.screen_x, self.screen_y,
                                                             self.width, self.height, x, pos_y, self.map)
+
+                blingNum = 0
+                while True:
+                    pygame.display.update()
+                    time.sleep(0.002)
+                    imgBling = pygame.image.load('./pic2/bling%s.png' % (blingNum + 1))
+                    self.screen.blit(imgBling, (self.blocks[x][pos_y].leftX, self.blocks[x][pos_y].topY))
+                    blingNum = (blingNum + 1) % 9
+                    blingNum += 1
+                    if blingNum == 9:
+                        break
+
         if down-up >= 2 and right-left >= 2:
             score -= 1
         # time.sleep(1)
@@ -304,6 +348,7 @@ class Tool:
         self.width = width
         self.height = height
         self.filePath = filePath
+        Tool.gameQueue = queue.LifoQueue()
 
     # def readMap(self):
     #     with open(self.filePath, 'r') as file:
